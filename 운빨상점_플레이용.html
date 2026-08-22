@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>운빨 상점</title>
+<style>
+/* ===================================================================
+   운빨 상점 — design tokens
+   Concept: a small auction house that deals in luck. Wine and
+   brass read as "valuable" the way a jeweller's box does; a carved
+   seal glyph and a lottery-ticket reveal keep it tied to the
+   subject instead of reading as generic "premium app" chrome.
+   =================================================================== */
+
+:root {
+  --ground: #f1eee8;
+  --vignette: rgba(122, 31, 43, 0.05);
+  --panel: #fffdfa;
+  --panel-alt: #eae4d9;
+  --line: #ddd4c4;
+  --ink: #262220;
+  --muted: #8a8175;
+  --accent: #7a1f2b;
+  --accent-ink: #fff8f2;
+  --gold: #96702a;
+  --shadow: rgba(40, 30, 20, 0.14);
+
+  --r-common: #85807a;
+  --r-uncommon: #3f7a4e;
+  --r-rare: #34608c;
+  --r-epic: #6b3f8c;
+  --r-legendary-a: #7a1f2b;
+  --r-legendary-b: #c9973f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #17141b;
+    --vignette: rgba(214, 99, 111, 0.07);
+    --panel: #201c26;
+    --panel-alt: #2a2531;
+    --line: #3a3240;
+    --ink: #f1ece4;
+    --muted: #a89fb0;
+    --accent: #d6636f;
+    --accent-ink: #241014;
+    --gold: #d9ad5c;
+    --shadow: rgba(0, 0, 0, 0.5);
+
+    --r-common: #a9a29b;
+    --r-uncommon: #5fae74;
+    --r-rare: #6f9fd1;
+    --r-epic: #a97fd1;
+    --r-legendary-a: #d6636f;
+    --r-legendary-b: #d9ad5c;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #17141b;
+  --vignette: rgba(214, 99, 111, 0.07);
+  --panel: #201c26;
+  --panel-alt: #2a2531;
+  --line: #3a3240;
+  --ink: #f1ece4;
+  --muted: #a89fb0;
+  --accent: #d6636f;
+  --accent-ink: #241014;
+  --gold: #d9ad5c;
+  --shadow: rgba(0, 0, 0, 0.5);
+
+  --r-common: #a9a29b;
+  --r-uncommon: #5fae74;
+  --r-rare: #6f9fd1;
+  --r-epic: #a97fd1;
+  --r-legendary-a: #d6636f;
+  --r-legendary-b: #d9ad5c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--ground);
+  background-image: radial-gradient(ellipse 900px 420px at 50% -12%, var(--vignette), transparent 60%);
+  color: var(--ink);
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+button { font-family: inherit; }
+button:focus-visible, .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+svg { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ---------- signboard header ---------- */
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 32px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.shop-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.seal-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0 0 3px var(--panel), 0 0 0 4px var(--line), 0 3px 8px var(--shadow);
+  flex-shrink: 0;
+}
+.seal-mark svg { width: 20px; height: 20px; }
+
+.shop-titles h1 {
+  margin: 0;
+  font-size: 1.32rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.shop-titles p {
+  margin: 3px 0 0;
+  font-family: "Batang", "Apple SD Gothic Neo", serif;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.stats {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 20px;
+  border-right: 1px solid var(--line);
+}
+.stat:last-of-type { border-right: none; padding-right: 0; }
+
+.stat-label {
+  font-size: 0.66rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.reset-btn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+  align-self: center;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.reset-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---------- counter / tabs ---------- */
+
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  padding: 16px 32px 0;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.tab-btn.active { color: var(--ink); background: var(--panel-alt); }
+.tab-btn:hover:not(.active) { color: var(--ink); }
+
+main {
+  padding: 28px 32px 64px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ---------- shop ---------- */
+
+.coin-aid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.coin-aid-text { font-size: 0.82rem; color: var(--muted); }
+.coin-aid-btn {
+  background: var(--panel-alt);
+  border: 1px solid var(--line);
+  color: var(--gold);
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.coin-aid-btn:hover:not(:disabled) { border-color: var(--gold); }
+.coin-aid-btn:disabled { color: var(--muted); cursor: not-allowed; opacity: 0.55; }
+
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 20px;
+}
+
+.box-card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 28px 22px 24px;
+  text-align: center;
+  overflow: hidden;
+  box-shadow: 0 1px 2px var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.box-card:not(.locked):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px -12px var(--shadow);
+}
+.box-card.locked { opacity: 0.6; }
+
+.box-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--tier-color, var(--muted));
+}
+.box-card[data-box="normal"] { --tier-color: #a5713f; }
+.box-card[data-box="rare"] { --tier-color: #9aa3ad; }
+.box-card[data-box="legendary"] { --tier-color: var(--gold); }
+
+.box-icon-ring {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 1.5px solid var(--tier-color, var(--line));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tier-color, var(--muted));
+  background: var(--panel-alt);
+}
+.box-icon-ring svg { width: 26px; height: 26px; }
+
+.box-name { font-size: 1.05rem; font-weight: 700; margin-top: 16px; }
+.box-cost { color: var(--gold); font-weight: 700; margin-top: 4px; font-size: 0.95rem; }
+.unlock-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin-top: 12px;
+  line-height: 1.4;
+}
+.unlock-hint svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+.buy-btn {
+  margin-top: 18px;
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  font-size: 0.94rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.buy-btn:disabled {
+  background: var(--panel-alt);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.buy-btn:not(:disabled):hover { filter: brightness(1.08); }
+.buy-btn:not(:disabled):active { transform: translateY(1px); }
+
+/* ---------- inventory ---------- */
+
+.inv-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.inv-toolbar-text { font-size: 0.82rem; color: var(--muted); }
+.inv-toolbar-btn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 9px 18px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+.inv-toolbar-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.inv-toolbar-btn:disabled { background: var(--panel-alt); color: var(--muted); cursor: not-allowed; }
+
+.inv-list { display: flex; flex-direction: column; gap: 8px; }
+
+.inv-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 16px;
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+.inv-stamp {
+  --r-color: var(--muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--r-color);
+  color: var(--r-color);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.inv-info { flex: 1; min-width: 0; }
+.inv-name { font-weight: 700; }
+.inv-qty { color: var(--muted); font-weight: 500; }
+.inv-meta { font-size: 0.82rem; margin-top: 2px; color: var(--muted); }
+
+.inv-actions { display: flex; gap: 8px; }
+.inv-actions button {
+  background: var(--panel-alt);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.inv-actions button:hover { border-color: var(--accent); color: var(--accent); }
+
+.empty-msg { color: var(--muted); text-align: center; padding: 56px 0; font-size: 0.92rem; }
+
+/* ---------- 도감 (almanac grid) ---------- */
+
+.dex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
+}
+
+.dex-cell {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: 0 1px 2px var(--shadow);
+}
+.dex-cell.undiscovered {
+  background: var(--panel-alt);
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+.dex-box-tag {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-alt);
+  color: var(--muted);
+}
+.dex-cell.undiscovered .dex-box-tag { background: transparent; }
+.dex-box-tag svg { width: 16px; height: 16px; }
+
+.dex-name { font-size: 0.82rem; font-weight: 700; margin-top: 8px; min-height: 2.2em; }
+.dex-rarity { font-size: 0.68rem; margin-top: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.dex-price { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+/* ---------- reveal ticket ---------- */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 8, 6, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal.hidden { display: none; }
+
+.ticket-card {
+  --rarity-color: #85807a;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px -8px var(--shadow), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  padding: 24px 28px 28px;
+  width: 300px;
+  position: relative;
+  transform: scale(0.85) translateY(8px);
+  opacity: 0;
+  transition: transform 0.32s cubic-bezier(0.2, 1.4, 0.4, 1), opacity 0.25s ease;
+}
+.ticket-card.pop { transform: scale(1) translateY(0); opacity: 1; }
+
+.ticket-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.ticket-serial {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.ticket-stamp {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rarity-color);
+  color: var(--rarity-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.76rem;
+  transform: rotate(-8deg);
+}
+.ticket-stamp.is-legendary {
+  background: linear-gradient(135deg, var(--r-legendary-b), var(--r-legendary-a));
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+.ticket-box-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.ticket-box-row svg { width: 14px; height: 14px; }
+#reveal-box-label { display: inline-flex; align-items: center; gap: 6px; }
+
+.ticket-perforation {
+  height: 1px;
+  border-top: 1px dashed var(--line);
+  margin: 18px -28px;
+}
+
+.ticket-body { text-align: center; position: relative; }
+
+.reveal-new {
+  display: none;
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: var(--accent-ink);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 11px;
+  border-radius: 999px;
+}
+
+.reveal-name { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.005em; }
+.reveal-rarity {
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin-top: 6px;
+  color: var(--rarity-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.reveal-rarity.is-legendary {
+  background: linear-gradient(90deg, var(--r-legendary-a), var(--r-legendary-b));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.reveal-price { color: var(--gold); font-weight: 700; margin-top: 12px; }
+
+.reveal-unlock-msg {
+  display: none;
+  margin-top: 18px;
+  padding: 11px;
+  background: var(--panel-alt);
+  border-radius: 9px;
+  font-size: 0.82rem;
+  color: var(--gold);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.reveal-close-btn {
+  margin-top: 22px;
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--ground);
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.reveal-close-btn:hover { filter: brightness(1.2); }
+</style>
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="shop-brand">
+    <div class="seal-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="4"/>
+        <circle cx="8.3" cy="8.3" r="1.15" fill="currentColor" stroke="none"/>
+        <circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/>
+        <circle cx="15.7" cy="15.7" r="1.15" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <div class="shop-titles">
+      <h1>운빨 상점</h1>
+      <p>행운을 사고파는 곳</p>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-label">코인</span>
+      <span class="stat-value" id="coin-count">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">개봉</span>
+      <span class="stat-value" id="box-opened-count">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">도감</span>
+      <span class="stat-value" id="dex-progress">0 / 0</span>
+    </div>
+    <button id="reset-btn" class="reset-btn">초기화</button>
+  </div>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="shop">상점</button>
+  <button class="tab-btn" data-tab="inventory">인벤토리</button>
+  <button class="tab-btn" data-tab="dex">도감</button>
+</nav>
+
+<main>
+  <section id="tab-shop" class="tab-panel active">
+    <div class="coin-aid">
+      <span class="coin-aid-text">코인이 100 미만일 때만 누를 수 있어요</span>
+      <button id="coin-aid-btn" class="coin-aid-btn">5코인 받기</button>
+    </div>
+    <div id="shop-boxes" class="box-grid"></div>
+  </section>
+
+  <section id="tab-inventory" class="tab-panel">
+    <div class="inv-toolbar">
+      <span class="inv-toolbar-text">아이템을 하나씩 팔지 않고 한 번에 정리할 수 있어요</span>
+      <button id="sell-all-inv-btn" class="inv-toolbar-btn">인벤토리 전체 판매</button>
+    </div>
+    <div id="inventory-list" class="inv-list"></div>
+  </section>
+
+  <section id="tab-dex" class="tab-panel">
+    <div id="dex-grid" class="dex-grid"></div>
+  </section>
+</main>
+
+<div id="reveal-modal" class="modal hidden">
+  <div id="reveal-card" class="ticket-card">
+    <div class="ticket-top">
+      <span class="ticket-serial">No. <span id="reveal-serial">000000</span></span>
+      <div class="ticket-stamp" id="reveal-stamp"></div>
+    </div>
+    <div class="ticket-box-row">
+      <span id="reveal-box-label"></span>
+    </div>
+    <div class="ticket-perforation"></div>
+    <div class="ticket-body">
+      <div class="reveal-new">NEW</div>
+      <div class="reveal-name"></div>
+      <div class="reveal-rarity"></div>
+      <div class="reveal-price"></div>
+    </div>
+    <div id="reveal-unlock-msg" class="reveal-unlock-msg"></div>
+    <button id="reveal-close" class="reveal-close-btn">닫기</button>
+  </div>
+</div>
+
+<script>
+// ===== 데이터 정의 =====
+
+const RARITIES = [
+  { key: 'common',    label: '일반',   color: 'var(--r-common)', weight: 60.9 },
+  { key: 'uncommon',  label: '고급',   color: 'var(--r-uncommon)', weight: 25 },
+  { key: 'rare',      label: '희귀',   color: 'var(--r-rare)', weight: 10 },
+  { key: 'epic',      label: '영웅',   color: 'var(--r-epic)', weight: 4 },
+  { key: 'legendary', label: '전설',   color: 'var(--r-legendary-a)', weight: 0.1 },
+];
+// 60 + 25 + 10 + 4 + 0.1 = 99.1 이라 합이 100이 되도록 '일반' 확률을 60.9로 보정했습니다.
+
+const BOXES = [
+  {
+    key: 'normal', label: '일반 상자', cost: 100, icon: 'crate',
+    unlock: { type: 'always' },
+  },
+  {
+    key: 'rare', label: '희귀 상자', cost: 300, icon: 'pouch',
+    unlock: { type: 'boxesOpened', value: 10 },
+  },
+  {
+    key: 'legendary', label: '전설 상자', cost: 700, icon: 'crown',
+    unlock: { type: 'boxesOpened', value: 30 },
+  },
+];
+
+const ICONS = {
+  crate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 12 4l9 4.5"/><path d="M3 8.5v9L12 22l9-4.5v-9"/><path d="M12 22V11.5"/><path d="M3 8.5 12 12l9-3.5"/></svg>',
+  pouch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8c0-2.2 1.3-4 3-4s3 1.8 3 4"/><path d="M5.5 8h13l-1.4 11.2a2 2 0 0 1-2 1.8H8.9a2 2 0 0 1-2-1.8L5.5 8z"/><path d="M9 12h6"/></svg>',
+  crown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><path d="M4.5 18 3 8l5 3.2L12 5l3.5 6.2L21 8l-1.5 10"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+};
+
+// 상자별 / 등급별 아이템 풀. 같은 등급이라도 상자가 좋을수록 가격이 높습니다.
+const ITEM_POOL = {
+  normal: {
+    common:    [['나무젓가락', 25], ['낡은 숟가락', 35], ['종이컵', 20], ['접시', 50], ['헌 신발', 45]],
+    uncommon:  [['오래된 라디오', 90], ['손목시계', 120], ['가죽 지갑', 80], ['도자기 화분', 110]],
+    rare:      [['은수저 세트', 220], ['골동품 시계', 260], ['수정 구슬', 180]],
+    epic:      [['사파이어 반지', 500], ['고대 동전', 420], ['용머리 조각상', 700]],
+    legendary: [['황금 팔찌', 4500], ['봉황의 깃털', 3200]],
+  },
+  rare: {
+    common:    [['은반지', 90], ['진주 귀걸이', 120], ['자수정 목걸이', 150], ['청동 브로치', 75]],
+    uncommon:  [['백금 팔찌', 180], ['홍옥 반지', 260], ['골동 회중시계', 230]],
+    rare:      [['에메랄드 목걸이', 400], ['다이아몬드 귀걸이', 550], ['흑진주 반지', 340]],
+    epic:      [['왕관 조각', 1200], ['용의 눈동자', 1600], ['마법사의 지팡이', 900]],
+    legendary: [['불사조의 심장', 9500], ['태양의 왕관', 12000]],
+  },
+  legendary: {
+    common:    [['낡은 지도', 200], ['청동 열쇠', 250], ['은화 주머니', 180]],
+    uncommon:  [['고대 인장', 400], ['마력의 부적', 550], ['유령선의 나침반', 650]],
+    rare:      [['크라켄의 이빨', 900], ['얼음 심장', 1300], ['천사의 날개', 1500]],
+    epic:      [['시간의 모래시계', 2500], ['창세의 파편', 3500], ['별의 눈물', 3800]],
+    legendary: [['신의 반지', 18000], ['종말의 검', 25000]],
+  },
+};
+
+// 전체 아이템 목록 생성 (id, box, rarity, name, price)
+const ALL_ITEMS = [];
+for (const box of BOXES) {
+  const pools = ITEM_POOL[box.key];
+  for (const rarity of RARITIES) {
+    const list = pools[rarity.key] || [];
+    list.forEach(([name, price], idx) => {
+      ALL_ITEMS.push({
+        id: `${box.key}_${rarity.key}_${idx}`,
+        boxKey: box.key,
+        rarityKey: rarity.key,
+        name,
+        price,
+      });
+    });
+  }
+}
+const ITEM_BY_ID = Object.fromEntries(ALL_ITEMS.map((it) => [it.id, it]));
+
+// ===== 상태 관리 =====
+
+const SAVE_KEY = 'luckyShopSave';
+const START_COINS = 1000;
+
+function defaultState() {
+  return {
+    coins: START_COINS,
+    boxesOpened: 0,
+    inventory: {},   // itemId -> qty
+    dex: {},         // itemId -> true (한 번이라도 획득)
+  };
+}
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return { ...defaultState(), ...parsed };
+  } catch (e) {
+    return defaultState();
+  }
+}
+
+function saveState() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function isUnlocked(box) {
+  if (box.unlock.type === 'always') return true;
+  if (box.unlock.type === 'boxesOpened') return state.boxesOpened >= box.unlock.value;
+  return false;
+}
+
+function pickRarity() {
+  const total = RARITIES.reduce((s, r) => s + r.weight, 0);
+  let roll = Math.random() * total;
+  for (const r of RARITIES) {
+    if (roll < r.weight) return r;
+    roll -= r.weight;
+  }
+  return RARITIES[0];
+}
+
+function pickItem(boxKey, rarityKey) {
+  const pool = ITEM_POOL[boxKey][rarityKey];
+  const [name, price] = pool[Math.floor(Math.random() * pool.length)];
+  return ALL_ITEMS.find((it) => it.boxKey === boxKey && it.rarityKey === rarityKey && it.name === name);
+}
+
+function buyBox(boxKey) {
+  const box = BOXES.find((b) => b.key === boxKey);
+  if (!box) return;
+  if (!isUnlocked(box)) return;
+  if (state.coins < box.cost) return;
+
+  state.coins -= box.cost;
+  const rarity = pickRarity();
+  const item = pickItem(box.key, rarity.key);
+
+  const isNew = !state.dex[item.id];
+  state.dex[item.id] = true;
+  state.inventory[item.id] = (state.inventory[item.id] || 0) + 1;
+  state.boxesOpened += 1;
+
+  const justUnlocked = BOXES.filter(
+    (b) => b.unlock.type === 'boxesOpened' && b.unlock.value === state.boxesOpened
+  );
+
+  saveState();
+  renderAll();
+  showReveal(box, rarity, item, isNew, justUnlocked);
+}
+
+function sellItem(itemId, qty) {
+  const owned = state.inventory[itemId] || 0;
+  const sellQty = Math.min(qty, owned);
+  if (sellQty <= 0) return;
+  const item = ITEM_BY_ID[itemId];
+  state.coins += item.price * sellQty;
+  state.inventory[itemId] -= sellQty;
+  if (state.inventory[itemId] <= 0) delete state.inventory[itemId];
+  saveState();
+  renderAll();
+}
+
+function sellAllInventory() {
+  const entries = Object.entries(state.inventory);
+  if (entries.length === 0) return;
+  const total = entries.reduce((sum, [itemId, qty]) => sum + ITEM_BY_ID[itemId].price * qty, 0);
+  if (!confirm(`보유한 아이템 전체를 판매하고 ${total.toLocaleString()} 코인을 받을까요?`)) return;
+  state.coins += total;
+  state.inventory = {};
+  saveState();
+  renderAll();
+}
+
+function claimCoinAid() {
+  if (state.coins >= 100) return;
+  state.coins += 5;
+  saveState();
+  renderAll();
+}
+
+function resetGame() {
+  if (!confirm('진행 상황을 모두 초기화할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+  state = defaultState();
+  saveState();
+  renderAll();
+}
+
+// ===== 렌더링 =====
+
+const el = (sel) => document.querySelector(sel);
+
+function rarityInfo(key) {
+  return RARITIES.find((r) => r.key === key);
+}
+
+function renderHeader() {
+  el('#coin-count').textContent = state.coins.toLocaleString();
+  el('#box-opened-count').textContent = state.boxesOpened.toLocaleString();
+  const discovered = Object.keys(state.dex).length;
+  el('#dex-progress').textContent = `${discovered} / ${ALL_ITEMS.length}`;
+  el('#coin-aid-btn').disabled = state.coins >= 100;
+}
+
+function renderShop() {
+  const wrap = el('#shop-boxes');
+  wrap.innerHTML = '';
+  for (const box of BOXES) {
+    const unlocked = isUnlocked(box);
+    const affordable = state.coins >= box.cost;
+    const card = document.createElement('div');
+    card.className = 'box-card' + (unlocked ? '' : ' locked');
+    card.dataset.box = box.key;
+
+    let unlockText = '';
+    if (!unlocked && box.unlock.type === 'boxesOpened') {
+      unlockText = `<div class="unlock-hint">${ICONS.lock} 상자 ${box.unlock.value}개 개봉 시 해금 (현재 ${state.boxesOpened})</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="box-icon-ring">${ICONS[box.icon]}</div>
+      <div class="box-name">${box.label}</div>
+      <div class="box-cost">${box.cost.toLocaleString()} 코인</div>
+      ${unlockText}
+      <button class="buy-btn" ${!unlocked || !affordable ? 'disabled' : ''}>
+        ${unlocked ? '구매하기' : '잠김'}
+      </button>
+    `;
+    if (unlocked) {
+      card.querySelector('.buy-btn').addEventListener('click', () => buyBox(box.key));
+    }
+    wrap.appendChild(card);
+  }
+}
+
+function renderInventory() {
+  const wrap = el('#inventory-list');
+  const entries = Object.entries(state.inventory);
+  el('#sell-all-inv-btn').disabled = entries.length === 0;
+  if (entries.length === 0) {
+    wrap.innerHTML = '<div class="empty-msg">보유한 아이템이 없습니다. 상자를 열어보세요!</div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  entries
+    .sort((a, b) => ITEM_BY_ID[b[0]].price - ITEM_BY_ID[a[0]].price)
+    .forEach(([itemId, qty]) => {
+      const item = ITEM_BY_ID[itemId];
+      const rarity = rarityInfo(item.rarityKey);
+      const row = document.createElement('div');
+      row.className = 'inv-row';
+      row.innerHTML = `
+        <div class="inv-stamp" style="--r-color:${rarity.color}">${rarity.label[0]}</div>
+        <div class="inv-info">
+          <div class="inv-name">${item.name} <span class="inv-qty">x${qty}</span></div>
+          <div class="inv-meta"><span style="color:${rarity.color}">${rarity.label}</span> · 개당 ${item.price.toLocaleString()} 코인</div>
+        </div>
+        <div class="inv-actions">
+          <button class="sell-one-btn">1개 판매</button>
+          <button class="sell-all-btn">전체 판매</button>
+        </div>
+      `;
+      row.querySelector('.sell-one-btn').addEventListener('click', () => sellItem(itemId, 1));
+      row.querySelector('.sell-all-btn').addEventListener('click', () => sellItem(itemId, qty));
+      wrap.appendChild(row);
+    });
+}
+
+function renderDex() {
+  const wrap = el('#dex-grid');
+  wrap.innerHTML = '';
+  const boxOrder = BOXES.map((b) => b.key);
+  const sorted = [...ALL_ITEMS].sort((a, b) => {
+    if (a.boxKey !== b.boxKey) return boxOrder.indexOf(a.boxKey) - boxOrder.indexOf(b.boxKey);
+    const rOrder = RARITIES.map((r) => r.key);
+    return rOrder.indexOf(a.rarityKey) - rOrder.indexOf(b.rarityKey);
+  });
+  for (const item of sorted) {
+    const discovered = !!state.dex[item.id];
+    const rarity = rarityInfo(item.rarityKey);
+    const box = BOXES.find((b) => b.key === item.boxKey);
+    const cell = document.createElement('div');
+    cell.className = 'dex-cell' + (discovered ? '' : ' undiscovered');
+    if (discovered) {
+      cell.style.borderColor = rarity.color;
+      cell.innerHTML = `
+        <div class="dex-box-tag" style="color:${rarity.color}">${ICONS[box.icon]}</div>
+        <div class="dex-name">${item.name}</div>
+        <div class="dex-rarity" style="color:${rarity.color}">${rarity.label}</div>
+        <div class="dex-price">${item.price.toLocaleString()}C</div>
+      `;
+    } else {
+      cell.innerHTML = `
+        <div class="dex-box-tag">${ICONS[box.icon]}</div>
+        <div class="dex-name">???</div>
+        <div class="dex-rarity">-</div>
+        <div class="dex-price">-</div>
+      `;
+    }
+    wrap.appendChild(cell);
+  }
+}
+
+function renderAll() {
+  renderHeader();
+  renderShop();
+  renderInventory();
+  renderDex();
+}
+
+// ===== 상자 오픈 결과 모달 =====
+
+function showReveal(box, rarity, item, isNew, justUnlocked) {
+  const modal = el('#reveal-modal');
+  const card = el('#reveal-card');
+  card.style.setProperty('--rarity-color', rarity.color);
+  const isLegendary = rarity.key === 'legendary';
+
+  card.querySelector('#reveal-serial').textContent = String(state.boxesOpened).padStart(6, '0');
+  const stampEl = card.querySelector('#reveal-stamp');
+  stampEl.textContent = rarity.label;
+  stampEl.classList.toggle('is-legendary', isLegendary);
+  card.querySelector('#reveal-box-label').innerHTML = `${ICONS[box.icon]} ${box.label}`;
+
+  const rarityEl = card.querySelector('.reveal-rarity');
+  rarityEl.textContent = rarity.label;
+  rarityEl.classList.toggle('is-legendary', isLegendary);
+  rarityEl.style.color = isLegendary ? '' : rarity.color;
+
+  card.querySelector('.reveal-name').textContent = item.name;
+  card.querySelector('.reveal-price').textContent = `판매가 ${item.price.toLocaleString()} 코인`;
+  card.querySelector('.reveal-new').style.display = isNew ? 'block' : 'none';
+
+  const unlockMsg = el('#reveal-unlock-msg');
+  if (justUnlocked.length > 0) {
+    unlockMsg.style.display = 'block';
+    unlockMsg.textContent = `${justUnlocked.map((b) => b.label).join(', ')}이(가) 해금되었습니다`;
+  } else {
+    unlockMsg.style.display = 'none';
+  }
+
+  modal.classList.remove('hidden');
+  card.classList.remove('pop');
+  requestAnimationFrame(() => card.classList.add('pop'));
+}
+
+function hideReveal() {
+  el('#reveal-modal').classList.add('hidden');
+}
+
+// ===== 탭 전환 =====
+
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+      btn.classList.add('active');
+      el(`#tab-${btn.dataset.tab}`).classList.add('active');
+    });
+  });
+}
+
+// ===== 초기화 =====
+
+function init() {
+  initTabs();
+  el('#reveal-close').addEventListener('click', hideReveal);
+  el('#reveal-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'reveal-modal') hideReveal();
+  });
+  el('#reset-btn').addEventListener('click', resetGame);
+  el('#coin-aid-btn').addEventListener('click', claimCoinAid);
+  el('#sell-all-inv-btn').addEventListener('click', sellAllInventory);
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
