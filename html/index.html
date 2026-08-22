@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주사위 게임</title>
+<style>
+  :root {
+    --bg1: #1f1c2c;
+    --bg2: #928dab;
+    --accent: #ff6b6b;
+    --accent2: #4ecdc4;
+    --gold: #f1c40f;
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --text: #f5f5f5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    color: var(--text);
+    padding: 20px;
+  }
+
+  .game {
+    width: 100%;
+    max-width: 640px;
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    position: relative;
+  }
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    margin: 0 0 24px;
+    font-size: 14px;
+    opacity: 0.7;
+  }
+
+  /* ---------- Mode select screen ---------- */
+  .mode-card {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 18px;
+    text-align: left;
+  }
+
+  .mode-card h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+  }
+
+  .mode-card p {
+    margin: 0 0 14px;
+    font-size: 13px;
+    opacity: 0.75;
+  }
+
+  #infiniteModeBtn {
+    width: 100%;
+    background: linear-gradient(135deg, #556270, #333);
+    color: #fff;
+  }
+
+  .round-presets {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .preset {
+    flex: 1;
+    min-width: 60px;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    padding: 10px;
+  }
+
+  .preset.active {
+    background: var(--accent2);
+    color: #10221f;
+  }
+
+  .custom-round {
+    display: flex;
+    gap: 8px;
+  }
+
+  .custom-round input {
+    flex: 1;
+    border-radius: 30px;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text);
+  }
+
+  .custom-round input::placeholder { color: rgba(245, 245, 245, 0.6); }
+
+  #customRoundBtn {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 20px;
+  }
+
+  /* ---------- Game screen ---------- */
+  .round-info {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .score-board {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 16px;
+  }
+
+  .score-box {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .score-box .label {
+    font-size: 13px;
+    opacity: 0.75;
+  }
+
+  .score-box .score {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .arena {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0 8px;
+  }
+
+  .player-area { flex: 1; }
+
+  .player-area h2 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    opacity: 0.85;
+  }
+
+  .vs {
+    font-size: 20px;
+    font-weight: 700;
+    opacity: 0.6;
+  }
+
+  .dice {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .dice.rolling { animation: shake 0.15s infinite; }
+
+  @keyframes shake {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-8deg) scale(1.03); }
+    50% { transform: rotate(0deg) scale(1); }
+    75% { transform: rotate(8deg) scale(1.03); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #2c2c2c;
+    align-self: center;
+    justify-self: center;
+    opacity: 0;
+  }
+
+  .dot.on { opacity: 1; }
+
+  .result-line {
+    min-height: 28px;
+    margin: 18px 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .result-line.win { color: var(--accent2); }
+  .result-line.lose { color: var(--accent); }
+  .result-line.draw { color: var(--gold); }
+
+  .effect-line {
+    min-height: 20px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* ---------- Item bar ---------- */
+  .item-bar {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .item-btn {
+    position: relative;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 10px 14px;
+    min-width: 78px;
+    color: var(--text);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .item-btn .icon { font-size: 22px; }
+
+  .item-btn .count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .item-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .item-btn.selected {
+    border-color: var(--accent2);
+    background: rgba(78, 205, 196, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    border: none;
+    border-radius: 30px;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s ease, opacity 0.2s ease;
+  }
+
+  #rollBtn {
+    background: linear-gradient(135deg, var(--accent2), #556270);
+    color: #fff;
+  }
+
+  #resetBtn, #exitBtn {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text);
+    padding: 14px 24px;
+    font-size: 14px;
+  }
+
+  button:active { transform: scale(0.95); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .history {
+    margin-top: 22px;
+    text-align: left;
+    font-size: 13px;
+    opacity: 0.75;
+    max-height: 110px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .history div { padding: 2px 0; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20, 20, 30, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 12px 22px;
+    border-radius: 30px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    z-index: 500;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ---------- End overlay ---------- */
+  .end-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .end-box {
+    background: linear-gradient(160deg, #2b2740, #1a1826);
+    border-radius: 20px;
+    padding: 40px 32px;
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: pop-in 0.35s ease;
+  }
+
+  @keyframes pop-in {
+    0% { transform: scale(0.6); opacity: 0; }
+    70% { transform: scale(1.06); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+
+  .end-box #endEmoji {
+    font-size: 56px;
+    margin-bottom: 10px;
+  }
+
+  .end-box h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+  }
+
+  .end-box p {
+    margin: 0 0 22px;
+    font-size: 14px;
+    opacity: 0.85;
+  }
+
+  .end-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .end-buttons button {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  #playAgainBtn { background: var(--accent2); color: #10221f; }
+  #backToModeBtn { background: rgba(255, 255, 255, 0.15); color: var(--text); }
+
+  .confetti-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1100;
+    overflow: hidden;
+  }
+
+  .confetti-piece {
+    position: fixed;
+    top: -20px;
+    opacity: 0.95;
+    animation-name: confetti-fall;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0.85; }
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+  <!-- ---------- Mode select screen ---------- -->
+  <div class="game" id="modeSelectScreen">
+    <h1>🎲 주사위 게임</h1>
+    <p class="subtitle">플레이 방식을 선택하세요</p>
+
+    <div class="mode-card">
+      <h3>♾️ 무한 모드</h3>
+      <p>판 수 제한 없이 원하는 만큼 계속 대결합니다.</p>
+      <button id="infiniteModeBtn">무한 모드 시작</button>
+    </div>
+
+    <div class="mode-card">
+      <h3>🎯 몇 판 모드</h3>
+      <p>원하는 판 수를 정해서 승부를 겨룹니다. 최종 승리 시 축하 이펙트가 터집니다!</p>
+      <div class="round-presets">
+        <button class="preset" data-rounds="3">3판</button>
+        <button class="preset" data-rounds="5">5판</button>
+        <button class="preset" data-rounds="7">7판</button>
+        <button class="preset" data-rounds="10">10판</button>
+      </div>
+      <div class="custom-round">
+        <input type="number" id="customRounds" min="1" max="99" placeholder="직접 입력 (판 수)">
+        <button id="customRoundBtn">시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Game screen ---------- -->
+  <div class="game hidden" id="gameScreen">
+    <h1>🎲 주사위 게임</h1>
+    <div class="round-info" id="roundInfo">무한 모드</div>
+
+    <div class="score-board">
+      <div class="score-box">
+        <div class="label">플레이어 승</div>
+        <div class="score" id="playerScore">0</div>
+      </div>
+      <div class="score-box">
+        <div class="label">무승부</div>
+        <div class="score" id="drawScore">0</div>
+      </div>
+      <div class="score-box">
+        <div class="label">컴퓨터 승</div>
+        <div class="score" id="computerScore">0</div>
+      </div>
+    </div>
+
+    <div class="arena">
+      <div class="player-area">
+        <h2>플레이어</h2>
+        <div class="dice" id="playerDice"></div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="player-area">
+        <h2>컴퓨터</h2>
+        <div class="dice" id="computerDice"></div>
+      </div>
+    </div>
+
+    <div class="result-line" id="resultLine">주사위를 굴려보세요!</div>
+    <div class="effect-line" id="effectLine"></div>
+
+    <div class="item-bar" id="itemBar"></div>
+
+    <div class="controls">
+      <button id="rollBtn">주사위 굴리기</button>
+      <button id="resetBtn">현재 게임 초기화</button>
+      <button id="exitBtn">모드 선택으로</button>
+    </div>
+
+    <div class="history" id="history"></div>
+  </div>
+
+  <!-- ---------- End overlay ---------- -->
+  <div class="end-overlay hidden" id="endOverlay">
+    <div class="end-box">
+      <div id="endEmoji">🎉</div>
+      <h2 id="endTitle">최종 승리!</h2>
+      <p id="endDetail"></p>
+      <div class="end-buttons">
+        <button id="playAgainBtn">다시하기</button>
+        <button id="backToModeBtn">모드 선택</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti-container" id="confettiContainer"></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+  /* ---------------- Dice rendering ---------------- */
+  const DOT_LAYOUT = {
+    1: [5],
+    2: [1, 9],
+    3: [1, 5, 9],
+    4: [1, 3, 7, 9],
+    5: [1, 3, 5, 7, 9],
+    6: [1, 3, 4, 6, 7, 9],
+  };
+
+  function renderDiceFace(el, value) {
+    el.innerHTML = '';
+    for (let i = 1; i <= 9; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (DOT_LAYOUT[value].includes(i) ? ' on' : '');
+      el.appendChild(dot);
+    }
+  }
+
+  function rollDie() {
+    return Math.floor(Math.random() * 6) + 1;
+  }
+
+  /* ---------------- Items ---------------- */
+  const ITEMS = {
+    luck:   { icon: '🍀', name: '행운의 주사위', desc: '내 주사위 +2 (최대 6)' },
+    attack: { icon: '🗡️', name: '방해 주사위', desc: '상대 주사위 -2 (최소 1)' },
+    swap:   { icon: '🔄', name: '운명의 반전', desc: '나와 상대의 주사위 값을 교환' },
+    double: { icon: '🎲', name: '더블 찬스', desc: '주사위 2개를 굴려 더 높은 눈을 선택' },
+  };
+  const ITEM_KEYS = Object.keys(ITEMS);
+  const ITEM_DROP_CHANCE = 0.45;
+
+  /* ---------------- Elements ---------------- */
+  const modeSelectScreen = document.getElementById('modeSelectScreen');
+  const gameScreen = document.getElementById('gameScreen');
+  const endOverlay = document.getElementById('endOverlay');
+
+  const playerDiceEl = document.getElementById('playerDice');
+  const computerDiceEl = document.getElementById('computerDice');
+  const resultLine = document.getElementById('resultLine');
+  const effectLine = document.getElementById('effectLine');
+  const rollBtn = document.getElementById('rollBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const exitBtn = document.getElementById('exitBtn');
+  const historyEl = document.getElementById('history');
+  const roundInfoEl = document.getElementById('roundInfo');
+  const itemBarEl = document.getElementById('itemBar');
+  const toastEl = document.getElementById('toast');
+  const confettiContainer = document.getElementById('confettiContainer');
+
+  const playerScoreEl = document.getElementById('playerScore');
+  const computerScoreEl = document.getElementById('computerScore');
+  const drawScoreEl = document.getElementById('drawScore');
+
+  /* ---------------- State ---------------- */
+  let mode = null;          // 'infinite' | 'rounds'
+  let totalRounds = 0;
+  let currentRound = 0;
+  let scores = { player: 0, computer: 0, draw: 0 };
+  let inventory = { luck: 0, attack: 0, swap: 0, double: 0 };
+  let selectedItem = null;
+  let gameActive = false;
+
+  /* ---------------- Mode select ---------------- */
+  document.getElementById('infiniteModeBtn').addEventListener('click', () => {
+    startGame('infinite', 0);
+  });
+
+  document.querySelectorAll('.preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      startGame('rounds', parseInt(btn.dataset.rounds, 10));
+    });
+  });
+
+  document.getElementById('customRoundBtn').addEventListener('click', () => {
+    const input = document.getElementById('customRounds');
+    const val = parseInt(input.value, 10);
+    if (!val || val < 1) {
+      input.focus();
+      return;
+    }
+    startGame('rounds', Math.min(val, 99));
+  });
+
+  function startGame(selectedMode, rounds) {
+    mode = selectedMode;
+    totalRounds = rounds;
+    currentRound = 0;
+    scores = { player: 0, computer: 0, draw: 0 };
+    inventory = { luck: 1, attack: 1, swap: 0, double: 0 };
+    selectedItem = null;
+    gameActive = true;
+
+    modeSelectScreen.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+
+    updateScoreBoard();
+    updateRoundInfo();
+    renderItemBar();
+    historyEl.innerHTML = '';
+    resultLine.textContent = '주사위를 굴려보세요!';
+    resultLine.className = 'result-line';
+    effectLine.textContent = '';
+    renderDiceFace(playerDiceEl, 1);
+    renderDiceFace(computerDiceEl, 1);
+    rollBtn.disabled = false;
+  }
+
+  function updateRoundInfo() {
+    if (mode === 'infinite') {
+      roundInfoEl.textContent = `♾️ 무한 모드 · ${currentRound}라운드 진행`;
+    } else {
+      roundInfoEl.textContent = `🎯 ${currentRound} / ${totalRounds} 라운드`;
+    }
+  }
+
+  function updateScoreBoard() {
+    playerScoreEl.textContent = scores.player;
+    computerScoreEl.textContent = scores.computer;
+    drawScoreEl.textContent = scores.draw;
+  }
+
+  /* ---------------- Item bar ---------------- */
+  function renderItemBar() {
+    itemBarEl.innerHTML = '';
+    ITEM_KEYS.forEach(key => {
+      const item = ITEMS[key];
+      const count = inventory[key];
+      const btn = document.createElement('button');
+      btn.className = 'item-btn' + (selectedItem === key ? ' selected' : '');
+      btn.disabled = count <= 0 || !gameActive;
+      btn.title = item.desc;
+      btn.innerHTML = `<span class="icon">${item.icon}</span><span>${item.name}</span><span class="count">${count}</span>`;
+      btn.addEventListener('click', () => toggleItem(key));
+      itemBarEl.appendChild(btn);
+    });
+  }
+
+  function toggleItem(key) {
+    if (inventory[key] <= 0 || !gameActive) return;
+    selectedItem = selectedItem === key ? null : key;
+    renderItemBar();
+  }
+
+  function maybeDropItem() {
+    if (Math.random() > ITEM_DROP_CHANCE) return;
+    const key = ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)];
+    inventory[key]++;
+    showToast(`아이템 획득! ${ITEMS[key].icon} ${ITEMS[key].name} (보유 ${inventory[key]}개)`);
+  }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer = null;
+  function showToast(message) {
+    toastEl.textContent = message;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+  }
+
+  /* ---------------- History ---------------- */
+  function addHistory(round, playerVal, computerVal, outcome) {
+    const line = document.createElement('div');
+    line.textContent = `#${round} 플레이어 ${playerVal} : 컴퓨터 ${computerVal} → ${outcome}`;
+    historyEl.prepend(line);
+  }
+
+  /* ---------------- Round flow ---------------- */
+  function playRound() {
+    if (!gameActive) return;
+    rollBtn.disabled = true;
+    document.querySelectorAll('.item-btn').forEach(b => b.disabled = true);
+    playerDiceEl.classList.add('rolling');
+    computerDiceEl.classList.add('rolling');
+    resultLine.textContent = '주사위 굴리는 중...';
+    resultLine.className = 'result-line';
+    effectLine.textContent = '';
+
+    let ticks = 0;
+    const maxTicks = 12;
+    const rollInterval = setInterval(() => {
+      renderDiceFace(playerDiceEl, rollDie());
+      renderDiceFace(computerDiceEl, rollDie());
+      ticks++;
+      if (ticks >= maxTicks) {
+        clearInterval(rollInterval);
+        finishRound();
+      }
+    }, 80);
+  }
+
+  function applyItem(playerVal, computerVal) {
+    let msg = '';
+    if (selectedItem === 'double') {
+      const second = rollDie();
+      if (second > playerVal) playerVal = second;
+      msg = `${ITEMS.double.icon} 더블 찬스 발동! 두 번째 눈 ${second} 중 더 높은 값 선택`;
+    } else if (selectedItem === 'luck') {
+      const before = playerVal;
+      playerVal = Math.min(6, playerVal + 2);
+      msg = `${ITEMS.luck.icon} 행운의 주사위 발동! 내 주사위 ${before} → ${playerVal}`;
+    } else if (selectedItem === 'attack') {
+      const before = computerVal;
+      computerVal = Math.max(1, computerVal - 2);
+      msg = `${ITEMS.attack.icon} 방해 주사위 발동! 상대 주사위 ${before} → ${computerVal}`;
+    } else if (selectedItem === 'swap') {
+      [playerVal, computerVal] = [computerVal, playerVal];
+      msg = `${ITEMS.swap.icon} 운명의 반전 발동! 주사위 값 교환`;
+    }
+    if (selectedItem) {
+      inventory[selectedItem]--;
+      selectedItem = null;
+    }
+    return { playerVal, computerVal, msg };
+  }
+
+  function finishRound() {
+    let playerVal = rollDie();
+    let computerVal = rollDie();
+
+    const applied = applyItem(playerVal, computerVal);
+    playerVal = applied.playerVal;
+    computerVal = applied.computerVal;
+    effectLine.textContent = applied.msg;
+
+    renderDiceFace(playerDiceEl, playerVal);
+    renderDiceFace(computerDiceEl, computerVal);
+    playerDiceEl.classList.remove('rolling');
+    computerDiceEl.classList.remove('rolling');
+
+    currentRound++;
+    let outcome;
+    if (playerVal > computerVal) {
+      scores.player++;
+      outcome = '플레이어 승리';
+      resultLine.textContent = `🎉 플레이어 승리! (${playerVal} vs ${computerVal})`;
+      resultLine.classList.add('win');
+    } else if (playerVal < computerVal) {
+      scores.computer++;
+      outcome = '컴퓨터 승리';
+      resultLine.textContent = `💻 컴퓨터 승리! (${playerVal} vs ${computerVal})`;
+      resultLine.classList.add('lose');
+    } else {
+      scores.draw++;
+      outcome = '무승부';
+      resultLine.textContent = `🤝 무승부! (${playerVal} vs ${computerVal})`;
+      resultLine.classList.add('draw');
+    }
+
+    updateScoreBoard();
+    addHistory(currentRound, playerVal, computerVal, outcome);
+    updateRoundInfo();
+    maybeDropItem();
+    renderItemBar();
+
+    if (mode === 'rounds' && currentRound >= totalRounds) {
+      gameActive = false;
+      setTimeout(showEndOverlay, 500);
+    } else {
+      rollBtn.disabled = false;
+    }
+  }
+
+  /* ---------------- End of game (rounds mode) ---------------- */
+  function showEndOverlay() {
+    const emojiEl = document.getElementById('endEmoji');
+    const titleEl = document.getElementById('endTitle');
+    const detailEl = document.getElementById('endDetail');
+
+    if (scores.player > scores.computer) {
+      emojiEl.textContent = '🏆';
+      titleEl.textContent = '축하합니다! 최종 승리!';
+      detailEl.textContent = `플레이어 ${scores.player}승 · 컴퓨터 ${scores.computer}승 · 무승부 ${scores.draw}`;
+      launchConfetti();
+    } else if (scores.player < scores.computer) {
+      emojiEl.textContent = '💻';
+      titleEl.textContent = '최종 패배...';
+      detailEl.textContent = `플레이어 ${scores.player}승 · 컴퓨터 ${scores.computer}승 · 무승부 ${scores.draw} · 다시 도전해보세요!`;
+    } else {
+      emojiEl.textContent = '🤝';
+      titleEl.textContent = '최종 무승부';
+      detailEl.textContent = `플레이어 ${scores.player}승 · 컴퓨터 ${scores.computer}승 · 무승부 ${scores.draw}`;
+    }
+
+    endOverlay.classList.remove('hidden');
+  }
+
+  function launchConfetti() {
+    const colors = ['#ff6b6b', '#4ecdc4', '#f1c40f', '#9b59b6', '#2ecc71', '#3498db', '#e67e22'];
+    for (let i = 0; i < 160; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.width = (6 + Math.random() * 8) + 'px';
+      piece.style.height = (10 + Math.random() * 10) + 'px';
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      piece.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+      piece.style.animationDelay = (Math.random() * 0.5) + 's';
+      confettiContainer.appendChild(piece);
+      setTimeout(() => piece.remove(), 5200);
+    }
+  }
+
+  document.getElementById('playAgainBtn').addEventListener('click', () => {
+    startGame(mode, totalRounds);
+  });
+
+  document.getElementById('backToModeBtn').addEventListener('click', () => {
+    endOverlay.classList.add('hidden');
+    gameScreen.classList.add('hidden');
+    modeSelectScreen.classList.remove('hidden');
+    gameActive = false;
+  });
+
+  /* ---------------- Controls ---------------- */
+  rollBtn.addEventListener('click', playRound);
+
+  resetBtn.addEventListener('click', () => {
+    if (mode) startGame(mode, totalRounds);
+  });
+
+  exitBtn.addEventListener('click', () => {
+    gameActive = false;
+    gameScreen.classList.add('hidden');
+    modeSelectScreen.classList.remove('hidden');
+  });
+</script>
+</body>
+</html>
